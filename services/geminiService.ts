@@ -1,5 +1,4 @@
 
-// @ts-ignore
 import { GoogleGenAI, Type } from "@google/genai";
 
 const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
