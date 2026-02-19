@@ -1,12 +1,11 @@
 
+// @ts-ignore
 import { GoogleGenAI, Type } from "@google/genai";
 
-const getAiClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-};
+const getAi = () => new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 
 export const explainCalculation = async (expression: string, result: string) => {
-  const ai = getAiClient();
+  const ai = getAi();
   
   try {
     const response = await ai.models.generateContent({
@@ -42,7 +41,7 @@ export const explainCalculation = async (expression: string, result: string) => 
 };
 
 export const solveWordProblem = async (problem: string) => {
-  const ai = getAiClient();
+  const ai = getAi();
   
   try {
     const response = await ai.models.generateContent({
