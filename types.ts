@@ -7,8 +7,3 @@ export interface HistoryItem {
 }
 
 export type CalculatorMode = 'standard' | 'scientific';
-
-export interface AiExplanation {
-  explanation: string;
-  steps: string[];
-}

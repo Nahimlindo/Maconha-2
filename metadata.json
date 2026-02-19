@@ -1,7 +1,5 @@
 {
   "name": "SmartCalc Pro Pink",
-  "description": "Uma calculadora moderna e elegante com histórico, suporte a teclado e um Assistente de IA integrado para explicar cálculos complexos.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "description": "Uma calculadora moderna, elegante e funcional com histórico completo e suporte a teclado.",
+  "requestFramePermissions": []
 }

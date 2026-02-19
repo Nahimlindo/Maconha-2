@@ -1,18 +1,13 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { History, Sparkles, Trash2, X, Calculator, HelpCircle } from 'lucide-react';
+import { History, Trash2, X, Calculator } from 'lucide-react';
 import { HistoryItem } from './types';
-import { explainCalculation, solveWordProblem } from './services/geminiService';
 
 const App: React.FC = () => {
   const [display, setDisplay] = useState('0');
   const [expression, setExpression] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showHistory, setShowHistory] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-  const [aiResponse, setAiResponse] = useState<any>(null);
-  const [showAiModal, setShowAiModal] = useState(false);
-  const [wordProblem, setWordProblem] = useState('');
 
   const historyEndRef = useRef<HTMLDivElement>(null);
 
@@ -54,6 +49,7 @@ const App: React.FC = () => {
       const sanitized = fullExpression.replace(/[^-+*/.0-9 ]/g, '');
       if (!sanitized) return null;
       
+      // eslint-disable-next-line no-eval
       const resultValue = eval(sanitized); 
       const result = Number.isFinite(resultValue) ? resultValue.toString() : 'Erro';
       
@@ -92,32 +88,6 @@ const App: React.FC = () => {
     setDisplay(prev => (prev.length > 1 ? prev.slice(0, -1) : '0'));
   }, []);
 
-  const handleAiExplain = async (item: HistoryItem) => {
-    setIsAiLoading(true);
-    setShowAiModal(true);
-    setAiResponse(null);
-    const res = await explainCalculation(item.expression, item.result);
-    setAiResponse(res);
-    setIsAiLoading(false);
-  };
-
-  const handleSolveWordProblem = async () => {
-    if (!wordProblem.trim()) return;
-    setIsAiLoading(true);
-    setAiResponse(null);
-    setShowAiModal(true);
-    const res = await solveWordProblem(wordProblem);
-    if (res) {
-      setAiResponse({
-        explanation: res.reasoning,
-        steps: [`Expressão: ${res.expression}`, `Resultado Final: ${res.result}`]
-      });
-      setDisplay(res.result);
-      setExpression(res.expression);
-    }
-    setIsAiLoading(false);
-  };
-
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
@@ -134,35 +104,8 @@ const App: React.FC = () => {
   }, [handleDigit, handleOperator, handleEquals, deleteLast, handleClear]);
 
   return (
-    <div className="min-h-screen bg-[#1a0b12] text-rose-50 flex flex-col md:flex-row items-center justify-center p-4 gap-6">
+    <div className="min-h-screen bg-[#1a0b12] text-rose-50 flex flex-col items-center justify-center p-4">
       
-      {/* Sidebar IA (Desktop) */}
-      <div className="hidden lg:flex flex-col w-80 gap-4 h-[600px]">
-        <div className="bg-rose-900/20 border border-rose-800/40 rounded-3xl p-6 flex-1 flex flex-col backdrop-blur-sm">
-          <div className="flex items-center gap-2 mb-4 text-pink-400">
-            <Sparkles size={20} />
-            <h2 className="font-bold uppercase tracking-tight">Assistente Smart</h2>
-          </div>
-          <p className="text-sm text-rose-300/70 mb-4 leading-relaxed">
-            Problemas matemáticos complexos? A IA resolve e explica para você.
-          </p>
-          <textarea 
-            className="flex-1 bg-rose-950/40 border border-rose-800/60 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500/50 transition-all resize-none placeholder-rose-700/50 text-rose-100"
-            placeholder="Ex: Quanto é 15% de 450 mais a raiz de 144?"
-            value={wordProblem}
-            onChange={(e) => setWordProblem(e.target.value)}
-          />
-          <button 
-            onClick={handleSolveWordProblem}
-            disabled={isAiLoading || !wordProblem}
-            className="mt-4 bg-pink-600 hover:bg-pink-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg shadow-pink-900/20"
-          >
-            {isAiLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Sparkles size={18} />}
-            Resolver com IA
-          </button>
-        </div>
-      </div>
-
       {/* Calculadora Principal */}
       <div className="relative w-full max-w-[400px] aspect-[1/1.6] bg-[#2d121e] border border-rose-800/40 rounded-[2.5rem] shadow-2xl flex flex-col overflow-hidden">
         
@@ -251,15 +194,9 @@ const App: React.FC = () => {
                     <div className="flex gap-2">
                       <button 
                         onClick={() => { setDisplay(item.result); setShowHistory(false); }}
-                        className="text-xs bg-rose-800/50 hover:bg-rose-700 px-3 py-1.5 rounded-lg transition-colors"
+                        className="text-xs bg-rose-800/50 hover:bg-rose-700 px-4 py-2 rounded-lg transition-colors w-full"
                       >
-                        Usar
-                      </button>
-                      <button 
-                        onClick={() => handleAiExplain(item)}
-                        className="text-xs bg-pink-600/20 hover:bg-pink-600/30 text-pink-400 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
-                      >
-                        <Sparkles size={14} /> Explicar IA
+                        Usar Resultado
                       </button>
                     </div>
                   </div>
@@ -271,72 +208,7 @@ const App: React.FC = () => {
         )}
       </div>
 
-      {/* Modal Explicação IA */}
-      {showAiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-rose-950/80 backdrop-blur-md">
-          <div className="bg-[#2d121e] border border-rose-800/40 w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in duration-200">
-            <div className="p-6 border-b border-rose-800/40 flex items-center justify-between bg-rose-900/20">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-pink-600/20 flex items-center justify-center text-pink-500">
-                  <Sparkles size={24} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg text-rose-50">Explicação da IA</h3>
-                  <p className="text-xs text-rose-400/70">Mestra em Matemática</p>
-                </div>
-              </div>
-              <button onClick={() => setShowAiModal(false)} className="p-2 hover:bg-rose-800/40 rounded-xl transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6 max-h-[60vh] overflow-y-auto">
-              {isAiLoading ? (
-                <div className="py-12 flex flex-col items-center justify-center text-rose-400">
-                  <div className="w-12 h-12 border-4 border-pink-500/20 border-t-pink-500 rounded-full animate-spin mb-4" />
-                  <p className="animate-pulse">Gerando uma resposta carinhosa...</p>
-                </div>
-              ) : aiResponse ? (
-                <div className="space-y-6">
-                  <div>
-                    <h4 className="text-pink-400/50 text-xs font-bold uppercase tracking-wider mb-2">Conceito</h4>
-                    <p className="text-rose-100 leading-relaxed text-sm">{aiResponse.explanation}</p>
-                  </div>
-                  <div>
-                    <h4 className="text-pink-400/50 text-xs font-bold uppercase tracking-wider mb-3">Passo a Passo</h4>
-                    <div className="space-y-3">
-                      {aiResponse.steps.map((step: string, i: number) => (
-                        <div key={i} className="flex gap-4 p-4 bg-rose-900/30 rounded-2xl border border-rose-800/20">
-                          <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-pink-600/20 text-pink-400 text-xs flex items-center justify-center font-bold">
-                            {i + 1}
-                          </span>
-                          <p className="text-sm text-rose-200/90 leading-relaxed">{step}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-rose-400">
-                  <HelpCircle className="mx-auto mb-2 opacity-30" size={40} />
-                  <p>Não consegui processar isso agora. Tente de novo!</p>
-                </div>
-              )}
-            </div>
-            
-            <div className="p-6 bg-rose-950/40 border-t border-rose-800/40">
-              <button 
-                onClick={() => setShowAiModal(false)}
-                className="w-full bg-rose-800/50 hover:bg-rose-700/50 text-rose-100 py-3 rounded-xl font-medium transition-all"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="lg:hidden mt-6 text-center text-rose-600/60 text-xs uppercase tracking-widest font-bold">
+      <div className="mt-8 text-center text-rose-600/40 text-xs uppercase tracking-widest font-bold">
         SmartCalc Pink Edition
       </div>
     </div>
@@ -351,7 +223,7 @@ interface CalcButtonProps {
 }
 
 const CalcButton: React.FC<CalcButtonProps> = ({ label, onClick, variant = 'number', className = '' }) => {
-  const baseStyles = "h-full min-h-[64px] flex items-center justify-center text-2xl font-light rounded-2xl transition-all active:scale-90 select-none";
+  const baseStyles = "h-full min-h-[64px] flex items-center justify-center text-2xl font-light rounded-2xl transition-all active:scale-95 select-none";
   
   const variants = {
     number: "bg-rose-800/20 hover:bg-rose-800/40 text-rose-50 border border-rose-700/20 backdrop-blur-sm",
