@@ -39,7 +39,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleOperator = useCallback((op: string) => {
-    setExpression(prev => display + ' ' + op + ' ');
+    setExpression(display + ' ' + op + ' ');
     setDisplay('0');
   }, [display]);
 
